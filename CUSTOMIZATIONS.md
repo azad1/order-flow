@@ -17,7 +17,7 @@ separate licence described by the original project.
 ## What changed
 
 - Nifty 50 and Sensex tabs with one combined constituent list for each index.
-- Sort stocks by published weight or absolute estimated impact, in either direction.
+- Sort stocks by descending published weight or largest absolute estimated impact.
 - Distinct futures price, futures percentage move, index weight and estimated point-impact labels.
 - A narrower stock list, wider connection area and animated directional paths with pause controls.
 - Colour intensity based on impact, price movement or index weight.
@@ -66,6 +66,10 @@ or enabled encryption feature. No Windows policy changes are required to run
 the dashboard in archive mode.
 
 ## Run on Windows
+
+For software checks, Git or ZIP download, troubleshooting and restart instructions,
+see the [Windows setup guide](docs/WINDOWS_SETUP.md). The
+[screenshot gallery](docs/screenshots/README.md) shows the current custom layout.
 
 Install Node.js 22.18 or newer if needed. Open PowerShell in this repository's
 folder, then install the project's local packages:
