@@ -2,13 +2,13 @@
   "name": "order-flow",
   "version": "1.0.0",
   "private": true,
-  "description": "Order Flow: a live board of where the money is flowing across Indian F&O, read from every underlying's future. Built-in demo market; plug in any broker API.",
+  "description": "Nifty & Sensex Estimator: estimating index movement from weighted stock futures. Based on Order Flow by Mr. Chartist; includes archive replay and contribution charts.",
   "license": "PolyForm-Noncommercial-1.0.0",
   "author": {
     "name": "Mr. Chartist",
     "url": "https://mrchartist.com"
   },
-  "homepage": "https://github.com/MrChartist/order-flow#readme",
+  "homepage": "https://github.com/azad1/order-flow#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azad1/order-flow.git"

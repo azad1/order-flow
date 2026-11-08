@@ -1,4 +1,4 @@
-# Windows setup — Nifty 50 & Sensex
+# Windows setup — Nifty & Sensex Estimator
 
 This guide is for the public fork at [azad1/order-flow](https://github.com/azad1/order-flow). It uses Windows PowerShell and the bundled archive replay. You do not need a broker account, API key or Python.
 
@@ -172,7 +172,7 @@ For a future live provider, follow [the provider setup section](../README.md#con
 | `node` or `npm.cmd` is not recognized | Close all terminal windows and open a new one after installing Node. If it still fails, use the checks below before reinstalling anything. |
 | `npm.ps1 cannot be loaded` / scripts are disabled | Use **`npm.cmd`**, as shown here. Do not change the system execution policy. |
 | `package.json` cannot be found / `ENOENT` | Open PowerShell in the extracted project folder, not its parent or the ZIP file. `Test-Path .\package.json` should return True. |
-| `EADDRINUSE` / port 8787 is already in use | Stop the other Order Flow server in its terminal, then retry. Do not stop unrelated processes. |
+| `EADDRINUSE` / port 8787 is already in use | Stop the other Estimator server in its terminal, then retry. Do not stop unrelated processes. |
 | The terminal prints port 5196 or another page address | Port 5195 was occupied, so Vite selected another port. Use the exact Local address printed, or stop the earlier app instance and restart. |
 | The page shows loading, pending or unavailable futures | Wait for the first collection to finish and read the status line. Missing futures are not replaced with cash prices. Check terminal errors if loading never completes. |
 | It says Demo or shows an older date | Start with `npm.cmd run dev:archive` and read the replay date. Fetching an archive does not establish a live connection. |

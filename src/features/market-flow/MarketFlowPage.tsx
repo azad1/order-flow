@@ -31,13 +31,12 @@ interface MarketFlowPageProps {
   universe: Underlying[];
 }
 
-/** The wordmark: Order Flow in the website's heading face, the Mr. Chartist dot, and who made it. */
+/** Name this custom edition while keeping the original project credit visible. */
 const BRAND = (
-  <a className="mf-brand" href="https://mrchartist.com/open-source/order-flow" target="_blank" rel="noreferrer" aria-label="Order Flow by Mr. Chartist">
-    <span className="mf-brand__dot" aria-hidden="true" />
-    <span className="mf-brand__name">Order <em>Flow</em></span>
-    <span className="mf-brand__by">by Mr. Chartist</span>
-  </a>
+  <div className="mf-brand mf-brand--estimator">
+    <span className="mf-brand__name">Nifty &amp; Sensex <em>Estimator</em></span>
+    <a className="mf-brand__credit" href="https://mrchartist.com/open-source/order-flow" target="_blank" rel="noreferrer">Based on Order Flow by Mr. Chartist</a>
+  </div>
 );
 
 export function MarketFlowPage({ universe }: MarketFlowPageProps) {
@@ -68,8 +67,8 @@ export function MarketFlowPage({ universe }: MarketFlowPageProps) {
 
   return (
     <div className="ui-flow oi-design" data-window="day" data-universe={indexId} data-layout="weights">
-      <h1 className="is-visually-hidden">Order Flow</h1>
-      <PageBar current="Order Flow" crumbs={false} className="oi-design ui-flow-pagebar" brand={BRAND}>{pageActions}</PageBar>
+      <h1 className="is-visually-hidden">Nifty &amp; Sensex Estimator</h1>
+      <PageBar current="Nifty & Sensex Estimator" crumbs={false} className="oi-design ui-flow-pagebar" brand={BRAND}>{pageActions}</PageBar>
       <div className="nw-index-nav"><div role="tablist" aria-label="Choose index" className="nw-index-tabs">
         {INDEX_DEFINITIONS.map((index, position) => <button type="button" role="tab" id={`${index.id}-tab`} key={index.id} aria-selected={indexId === index.id} aria-controls={`${index.id}-board`} tabIndex={indexId === index.id ? 0 : -1} onClick={() => changeIndex(index.id)} onKeyDown={event => {
           if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -78,7 +77,7 @@ export function MarketFlowPage({ universe }: MarketFlowPageProps) {
           changeIndex(next.id);
           document.getElementById(`${next.id}-tab`)?.focus();
         }}>{index.label}</button>)}
-      </div><span>Choose an index to follow</span></div>
+      </div><span>Estimating index movement from weighted stock futures.</span></div>
       <div role="tabpanel" id={`${indexId}-board`} aria-labelledby={`${indexId}-tab`}>
       <NiftyWeightBoard key={indexId} definition={definition} flow={flow} benchmark={benchmarkStock}
         status={<FlowStatus flow={flow} at={market?.at ?? null} loading={loading} error={error} provider={provider} futuresRead={futuresRead} futuresTotal={futuresTotal} onRescan={rescan} />} />

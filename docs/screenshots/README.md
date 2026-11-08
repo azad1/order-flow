@@ -1,4 +1,4 @@
-# Current dashboard screenshots
+# Nifty & Sensex Estimator screenshots
 
 These are unedited captures of the running Nifty/Sensex fork, taken on **8 November 2026**. The app was replaying the bundled **6 November 2026 exchange archive session**. They are documentation examples, not current quotes, live-feed verification or trading recommendations.
 

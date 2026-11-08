@@ -1,4 +1,4 @@
-# Nifty / Sensex custom edition
+# Nifty & Sensex Estimator — custom edition
 
 This is a personal, non-commercial adaptation of **Order Flow**, created by
 [Mr. Chartist](https://mrchartist.com). Original source:
@@ -16,6 +16,7 @@ separate licence described by the original project.
 
 ## What changed
 
+- The custom edition is named **Nifty & Sensex Estimator**, with the original Order Flow credit retained.
 - Nifty 50 and Sensex tabs with one combined constituent list for each index.
 - Sort stocks by descending published weight or largest absolute estimated impact.
 - Distinct futures price, futures percentage move, index weight and estimated point-impact labels.

@@ -1,6 +1,8 @@
-# Order Flow — Nifty 50 & Sensex
+# Nifty & Sensex Estimator
 
-A visual dashboard for seeing how constituent stock futures may contribute to Nifty 50 and Sensex movements.
+**Estimating index movement from weighted stock futures.**
+
+Combine constituent futures movements with their index weights to estimate Nifty 50 and Sensex movement, and compare that estimate with the index future. This is an estimate of movement in the selected session, not a forecast of future prices.
 
 This is a **personal, non-commercial fork** of [MrChartist/order-flow](https://github.com/MrChartist/order-flow), originally created by [Mr. Chartist](https://mrchartist.com). The original [licence](LICENSE), copyright notice and [third-party notices](NOTICE.md) are preserved.
 
