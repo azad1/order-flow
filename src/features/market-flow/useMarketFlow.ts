@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getThemeDirectory, type Underlying } from '@/lib/underlyings';
 import { useFuturesFeed, useMarketFeed } from './feed';
 import { buildMarketFlow, nearSeries, type FlowSettings, type MarketFlow } from './marketFlowModel';
+import { synchronizeFutures } from './comparisonData';
 
 /** While the futures arrive the board is rebuilt at most this often, so a burst of arrivals is one redraw. */
 export const COMMIT_MS = 750;
@@ -47,20 +48,24 @@ export function useMarketFlow(universe: readonly Underlying[], settings: FlowSet
   const futures = useFuturesFeed(symbols, Boolean(market), data.status);
   const live = useMemo(() => ({ series: futures.series, failed: futures.failed }), [futures.series, futures.failed]);
   const committed = useThrottled(live, COMMIT_MS, futures.read >= futures.total);
+  const aligned = useMemo(() => benchmark && market
+    ? synchronizeFutures(committed.series, symbols, market.date, benchmark.symbol)
+    : { series: committed.series, at: null, latestAt: null }, [benchmark, market, committed.series, symbols]);
 
   // The settings that change the chart only (lines, named) do not re-deal the board.
   const { window: win, scope, floorPct } = settings;
   const flow: MarketFlow | null = useMemo(
-    () => (market ? buildMarketFlow(market, committed.series, universe, sectorLabels, { window: win, scope, floorPct, named: null, lines: 'all' }, { failed: committed.failed }) : null),
-    [market, committed, universe, sectorLabels, win, scope, floorPct],
+    () => (market ? buildMarketFlow(market, aligned.series, universe, sectorLabels, { window: win, scope, floorPct, named: null, lines: 'all' }, { failed: committed.failed }) : null),
+    [market, aligned, committed.failed, universe, sectorLabels, win, scope, floorPct],
   );
   const benchmarkStock = useMemo(() => market && benchmark
-    ? buildMarketFlow(market, committed.series, [benchmark], sectorLabels, { window: win, scope: 'indices', floorPct, named: null, lines: 'all' }, { failed: committed.failed }).stocks[0] ?? null
-    : null, [market, committed, benchmark, sectorLabels, win, floorPct]);
+    ? buildMarketFlow(market, aligned.series, [benchmark], sectorLabels, { window: win, scope: 'indices', floorPct, named: null, lines: 'all' }, { failed: committed.failed }).stocks[0] ?? null
+    : null, [market, aligned, committed.failed, benchmark, sectorLabels, win, floorPct]);
 
   return {
     flow,
     benchmarkStock,
+    alignment: { at: aligned.at, latestAt: aligned.latestAt },
     market,
     loading: data.loading,
     error: data.error,

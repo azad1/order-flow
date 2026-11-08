@@ -6,7 +6,7 @@ Combine constituent futures movements with their index weights to estimate Nifty
 
 This is a **personal, non-commercial fork** of [MrChartist/order-flow](https://github.com/MrChartist/order-flow), originally created by [Mr. Chartist](https://mrchartist.com). The original [licence](LICENSE), copyright notice and [third-party notices](NOTICE.md) are preserved.
 
-> **Current data mode: archive replay.** These screenshots use the bundled **6 November 2026** session. Exchange closing figures are real; the intraday paths are reconstructed. A live broker feed is **not connected**.
+> **Recommended comparison mode: recorded replay, 30 October 2026.** This uses the bundled recorded one-minute futures candles. A live broker feed is **not connected**. The gallery screenshots below are older **6 November archive replay** captures with reconstructed intraday paths.
 
 [Windows setup](docs/WINDOWS_SETUP.md) · [Screenshots](docs/screenshots/README.md) · [What changed](CUSTOMIZATIONS.md) · [Provider integration](PROVIDERS.md)
 
@@ -50,21 +50,39 @@ Install the project's local packages:
 npm.cmd install
 ```
 
-Start the bundled archive replay:
+Start the bundled recorded replay (the latest bundled recording is 30 October 2026):
 
 ```powershell
-npm.cmd run dev:archive
+npm.cmd run dev:recorded
 ```
 
 Open **http://127.0.0.1:5195/** and keep the terminal open. Stop with **Ctrl+C**. Next time, open PowerShell in the same folder and run the start command again; installation is only needed initially or when dependencies change.
 
 **No Git?** Download [this fork as a ZIP](https://github.com/azad1/order-flow/archive/refs/heads/main.zip), extract it, and open PowerShell inside the extracted folder containing `package.json`. Then use the install and start commands above.
 
-**First check:** the status should say **NSE archive … · replay**. Wait for the futures loading count to finish, try both index tabs, and click a stock. The date shown is the replay session, not necessarily today's date.
+**First check:** the data card should say **Recorded replay**, session **30 October 2026**. Wait for the futures loading count to finish, try both index tabs, and click a stock. The date shown is the historical session, not today's date.
+
+The comparison data card shows the shared candle close, stock and weight coverage, weight date and contract expiries. Stocks, rankings and the index future are held at the latest minute shared by the available futures. The chart plots observed candles, preserving the opening gap; **Future − estimate** is the percentage-point difference at the selected common minute. Its 1-hour and 15-minute controls zoom without changing the previous-close baseline.
+
+Nifty uses a same-date, static weight snapshot, which is not guaranteed to equal session-opening weights. Sensex weights are **53 days older than this recording**; session-date weights are not loaded and this limitation is visible. NSE stock futures expire on 23 November and BSE Sensex futures on 26 November; the month matches, but the days differ.
+
+Run the offline coverage, timestamp and contract check without credentials:
+
+```powershell
+npm.cmd run check:comparison
+```
+
+The check covers 375 common regular-session minutes, all 50 Nifty stocks and all 30 Sensex stocks. It verifies data consistency, not predictive accuracy or the recording's provenance. See the [recording source and data terms](data/recorded/README.md).
 
 ## Screenshots of this fork
 
-All six screenshots show the current custom interface. They are actual captures of the running app, not mock-ups. Captured on **8 November 2026** at different moments of the **6 November 2026 archive replay**; values therefore differ between images. All displayed market quote prices are futures prices.
+### Recorded comparison — current version
+
+![Recorded Sensex futures and weighted estimate, aligned to the same candle with a percentage-point gap](docs/screenshots/recorded-comparison.jpg)
+
+*Captured on 8 November 2026 from the recorded **30 October 2026** session. The chart compares the same observed minute and reports Future − estimate in percentage points. Sensex uses older 7 September weights, flagged in the data-quality card above the board. This is a historical replay, not a live connection.*
+
+The six screenshots below show the earlier custom interface. They are actual captures of the running app, not mock-ups. Captured on **8 November 2026** at different moments of the **6 November 2026 archive replay**; values therefore differ between images. All displayed market quote prices are futures prices.
 
 ### Index future versus the weighted estimate
 
@@ -136,7 +154,7 @@ The cash-index previous close is only the point-conversion reference. Futures ba
 | Mode | Windows command | What it means |
 |---|---|---|
 | Archive replay | `npm.cmd run dev:archive` | Exchange end-of-day figures with reconstructed intraday paths. Bundled session: 6 November 2026. |
-| Recorded replay | `npm.cmd run dev:recorded` | Replays the bundled recorded sessions. See their [data notes](data/recorded/README.md). |
+| Recorded replay (recommended) | `npm.cmd run dev:recorded` | Replays recorded one-minute futures candles; latest bundled session is 30 October 2026. See their [data notes](data/recorded/README.md). |
 | Demo | `npm.cmd run dev` | Simulated market by default, unless a provider is explicitly configured in the process environment. |
 | Your own provider | See [Connect any API](#connect-any-api) | Requires a suitable API or adapter, credentials where required, and verification. No live connection is enabled by this fork. |
 
@@ -161,13 +179,13 @@ From the project folder, build the page:
 npm.cmd run build
 ```
 
-Then explicitly start archive mode:
+Then explicitly start recorded mode:
 
 ```powershell
-npm.cmd run start:archive
+npm.cmd run start:recorded
 ```
 
-Open **http://127.0.0.1:8787/**. Stop the development server first so both processes do not try to use the API port. Plain `npm.cmd start` uses the default/configured provider; it does not explicitly select archive mode.
+Open **http://127.0.0.1:8787/**. Stop the development server first so both processes do not try to use the API port. Plain `npm.cmd start` uses the default/configured provider; it does not explicitly select recorded mode.
 
 ## Connect any API
 

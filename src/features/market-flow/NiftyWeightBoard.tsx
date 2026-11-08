@@ -7,10 +7,13 @@ import { buildUpText, ChangeText, Spark, TickFlash, toneOf } from './FlowParts';
 import type { FlowStock, MarketFlow } from './marketFlowModel';
 import { NIFTY_INDEX, type IndexDefinition } from './indexDefinitions';
 import { NiftyImpactFlow } from './NiftyImpactFlow';
+import { ComparisonQuality } from './ComparisonQuality';
+import type { ComparisonAlignment } from './comparisonData';
+import type { FeedStatus } from './feed';
 import { futuresQuote, impactHeat, impactPoints, niftyImpact, niftyPointBase, signed, sortedImpacts, type ImpactShade, type ImpactSort } from './niftyImpactModel';
 
 /** All fifty stocks, with an explicit choice of impact or published-weight order. */
-export function NiftyWeightBoard({ flow, status, benchmark, definition = NIFTY_INDEX }: { flow: MarketFlow | null; status: ReactNode; benchmark?: FlowStock | null; definition?: IndexDefinition }) {
+export function NiftyWeightBoard({ flow, status, benchmark, definition = NIFTY_INDEX, provider, alignment }: { flow: MarketFlow | null; status: ReactNode; benchmark?: FlowStock | null; definition?: IndexDefinition; provider?: FeedStatus['provider'] | null; alignment?: ComparisonAlignment }) {
   const [compact, setCompact] = useState(true);
   const [shade, setShade] = useState<ImpactShade>('impact');
   const tableRef = useRef<HTMLDivElement>(null);
@@ -54,6 +57,7 @@ export function NiftyWeightBoard({ flow, status, benchmark, definition = NIFTY_I
           <div className="nw-concentration"><span>Top 10 index weight</span><strong>{topTen.toFixed(2)}%</strong></div>
         </header>
         <div className="nw-status">{status}</div>
+        <ComparisonQuality flow={flow} benchmark={benchmark} model={impact} definition={definition} provider={provider} alignment={alignment} />
         <div className="nw-source">
           <span>Weights: <b>{definition.weightDate}</b></span>
           <a href={definition.weightSource} target="_blank" rel="noreferrer">{definition.sourceLabel}</a>

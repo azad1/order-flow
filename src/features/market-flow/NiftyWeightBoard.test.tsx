@@ -225,25 +225,25 @@ describe('Nifty weight list', () => {
     const benchmark = { ...future('NIFTY', Array.from({ length: 30 }, (_, i) => -(i + 1) / 100)), prevClose: 25000, kind: 'index' as const };
     render(<NiftyWeightBoard flow={flow(stocks)} benchmark={benchmark} status={null} />);
     const slider = screen.getByRole('slider', { name: 'Inspect chart time' });
-    fireEvent.change(slider, { target: { value: '10' } });
+    fireEvent.change(slider, { target: { value: '9' } });
     expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('09:25 IST');
-    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. +24.9 pts');
+    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. points +24.9 pts');
     fireEvent.click(screen.getByRole('button', { name: '15 min' }));
     expect(slider).toHaveAttribute('max', '15');
     expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('09:45 IST');
-    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. +74.6 pts');
+    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. points +74.6 pts');
     fireEvent.click(screen.getByRole('button', { name: 'Session' }));
-    expect(slider).toHaveAttribute('max', '30');
+    expect(slider).toHaveAttribute('max', '29');
   });
 
   it('starts the comparison at the latest shared minute and leaves unavailable later values blank', () => {
     const benchmark = { ...future('NIFTY', [-.1, -.2, -.3]), prevClose: 25000, kind: 'index' as const };
     render(<NiftyWeightBoard flow={flow([future('HDFCBANK', [1, 2])])} benchmark={benchmark} status={null} />);
     expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('09:17 IST');
-    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. +49.8 pts');
-    fireEvent.change(screen.getByRole('slider', { name: 'Inspect chart time' }), { target: { value: '3' } });
+    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. points +49.8 pts');
+    fireEvent.change(screen.getByRole('slider', { name: 'Inspect chart time' }), { target: { value: '2' } });
     expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('09:18 IST');
-    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Basket —%');
-    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. — pts');
+    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Weighted estimate —%');
+    expect(screen.getByLabelText('Values at selected chart time')).toHaveTextContent('Est. points — pts');
   });
 });

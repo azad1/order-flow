@@ -1,6 +1,7 @@
 import { Button } from '@/components/common/Button';
 import { describeDataAge } from './dataAge';
 import { clockOf, type MarketFlow } from './marketFlowModel';
+import { describeFeed } from './comparisonData';
 
 const dateFormat = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
 
@@ -30,7 +31,7 @@ interface FlowStatusProps {
 export function FlowStatus({ flow, at, loading, error, provider, futuresRead, futuresTotal, onRescan, now }: FlowStatusProps) {
   const source = provider ? (
     <span className={`mf-status__source${provider.alwaysLive ? ' is-demo' : ''}`}>
-      <i aria-hidden="true" />{provider.id === 'recorded' || provider.id === 'archive' ? `${provider.label} · replay` : provider.alwaysLive ? `${provider.label} · live` : provider.label}
+      <i aria-hidden="true" />{describeFeed(provider).label} · {provider.label}
     </span>
   ) : null;
   if (!flow) {

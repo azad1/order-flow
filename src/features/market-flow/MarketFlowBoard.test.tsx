@@ -235,13 +235,13 @@ describe('the status line', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it('names the source, and marks the demo market as live', () => {
+  it('distinguishes simulated, connected and recorded sources without calling a demo live', () => {
     const { rerender } = render(<FlowStatus {...base} flow={flow} at={OPEN} now={OPEN} provider={{ id: 'demo', label: 'Demo market', alwaysLive: true }} />);
-    expect(screen.getByText('Demo market · live')).toHaveClass('is-demo');
+    expect(screen.getByText('Simulated demo · Demo market')).toHaveClass('is-demo');
     rerender(<FlowStatus {...base} flow={flow} at={OPEN} now={OPEN} provider={{ id: 'upstox', label: 'Upstox', alwaysLive: false }} />);
-    expect(screen.getByText('Upstox')).not.toHaveClass('is-demo');
+    expect(screen.getByText('Connected API feed · Upstox')).not.toHaveClass('is-demo');
     rerender(<FlowStatus {...base} flow={flow} at={OPEN} now={Date.parse('2026-11-04T10:00:00+05:30')} provider={{ id: 'recorded', label: 'Recorded 30 Oct 2026', alwaysLive: true }} />);
-    expect(screen.getByText('Recorded 30 Oct 2026 · replay')).toBeInTheDocument();
+    expect(screen.getByText('Recorded replay · Recorded 30 Oct 2026')).toBeInTheDocument();
     // A recorded day is old on purpose: no "earlier session" warning.
     expect(screen.queryByText(/an earlier session/)).toBeNull();
   });

@@ -52,7 +52,7 @@ export async function fetchFutures(symbol: string, session: string): Promise<Fut
   const res = await fetch(`${API}/api/futures/${encodeURIComponent(symbol)}?session=${session}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Futures ${symbol}: ${res.status}`);
   const body = await res.json() as { months: FuturesMonth[] };
-  return combineMonths(symbol, body.months ?? []);
+  return combineMonths(symbol, (body.months ?? []).filter(month => month.date >= session).sort((a, b) => a.date.localeCompare(b.date)));
 }
 
 /** The market file, read again every minute while the numbers can move. */
@@ -72,7 +72,8 @@ export function useMarketFeed() {
         setError(null);
         // A file from an earlier session is not today's board; a reading older than the one held is ignored.
         if (next.date < (statusRef.current?.session ?? getLatestTradingSessionDate(new Date()))) return;
-        setMarket(current => (current && next.at <= current.at ? current : next));
+        const replay = ['recorded', 'archive'].includes(statusRef.current?.provider.id ?? '');
+        setMarket(current => (current && next.at <= current.at && !replay ? current : next));
       })
       .catch(err => { if (!controller.signal.aborted) setError(String(err?.message ?? err)); });
     return () => controller.abort();

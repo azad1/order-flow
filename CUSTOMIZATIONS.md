@@ -23,6 +23,10 @@ separate licence described by the original project.
 - A narrower stock list, wider connection area and animated directional paths with pause controls.
 - Colour intensity based on impact, price movement or index weight.
 - An interactive comparison chart for the index future and weighted constituent estimate.
+- Recorded replay is the recommended comparison mode. Both the basket and benchmark readings, prices and rankings use the latest observed minute shared by available futures.
+- A data-quality card distinguishes recorded, reconstructed, simulated and connected sources; shows session, shared candle time, coverage and weight date; and discloses expiry differences and older weights.
+- The comparison chart preserves observed opening gaps and reports **Future − estimate** in percentage points at the selected shared minute. It never forces the curves to agree.
+- `npm.cmd run check:comparison` audits recorded-session coverage, timestamps, price bases and contracts without broker credentials.
 - Top five daily contributors in each direction, plus top five recent risers and fallers over a shared 15-minute window.
 - Stock detail panels opened from the left list or the contributor cards.
 - Tests for rankings, futures-only prices, chart calculations, recent movers and the index switch.

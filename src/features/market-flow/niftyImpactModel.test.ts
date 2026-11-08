@@ -75,9 +75,9 @@ describe('estimated Nifty contribution', () => {
   });
   it('combines returns only at shared candle times and stops where the stale stock stops', () => {
     const result = basketHistory(niftyImpact([stock('HDFCBANK', [1, 2, 3]), stock('ICICIBANK', [-1, -2])]), open, open + 5 * MINUTE);
-    expect(result.line?.t).toEqual([open, open + MINUTE, open + 2 * MINUTE]);
-    expect(result.line?.v[1]).toBeCloseTo(.0056);
-    expect(result.line?.v[2]).toBeCloseTo(.0112);
+    expect(result.line?.t).toEqual([open + MINUTE, open + 2 * MINUTE]);
+    expect(result.line?.v[0]).toBeCloseTo(.0056);
+    expect(result.line?.v[1]).toBeCloseTo(.0112);
   });
   it('withholds a basket curve when one contributing stock has no history', () => {
     const missing = { ...stock('ICICIBANK', [1]), candles: [] };

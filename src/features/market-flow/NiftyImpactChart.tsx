@@ -17,7 +17,7 @@ export function NiftyImpactChart({ flow, benchmark, model, definition = NIFTY_IN
     if (!flow) return null;
     const [open, close] = chartSpan(flow);
     const basket = basketHistory(model, open, close).line;
-    const nifty = benchmark?.symbol === definition.symbol && benchmark.source === 'futures' ? lineOf(benchmark, open, close) : null;
+    const nifty = benchmark?.symbol === definition.symbol && benchmark.source === 'futures' ? lineOf(benchmark, open, close, false) : null;
     const lines = [basket, nifty].filter(line => line !== null);
     if (!lines.length) return null;
     const end = Math.max(open + MINUTE, ...lines.map(line => line.t.at(-1)!));
@@ -26,7 +26,7 @@ export function NiftyImpactChart({ flow, benchmark, model, definition = NIFTY_IN
     const values = lines.flatMap(line => line.v.filter((_, i) => line.t[i] >= start && line.t[i] <= end));
     const reach = Math.max(.2, Math.ceil(Math.max(...values.map(Math.abs)) * 1.12 * 10) / 10);
     const common = basket && nifty ? times.filter(t => valueAt(basket, t) !== null && valueAt(nifty, t) !== null).at(-1) : undefined;
-    return { start, end, reach, basket, nifty, times, comparisonAt: common ?? end };
+    return { start, end, reach, basket, nifty, times, comparisonAt: common ?? end, hasCommonTime: common != null };
   }, [flow, benchmark, model, range, definition]);
   const width = box.width || 500;
   const height = 320;
@@ -38,6 +38,7 @@ export function NiftyImpactChart({ flow, benchmark, model, definition = NIFTY_IN
   const basketValue = history ? valueAt(history.basket, at) : null;
   const niftyValue = history ? valueAt(history.nifty, at) : null;
   const pointValue = impactPoints(basketValue, base);
+  const gap = niftyValue != null && basketValue != null ? niftyValue - basketValue : null;
   const x = (t: number) => left + (t - history!.start) / (history!.end - history!.start) * (right - left);
   const y = (v: number) => (top + bottom) / 2 - v / history!.reach * (bottom - top) / 2;
   const area = (line: NonNullable<typeof history>['nifty']) => line ? `${pathOf(line, x, y)}L${x(line.t.at(-1)!).toFixed(1)},${y(0).toFixed(1)}L${x(line.t[0]).toFixed(1)},${y(0).toFixed(1)}Z` : '';
@@ -54,8 +55,9 @@ export function NiftyImpactChart({ flow, benchmark, model, definition = NIFTY_IN
     ] as const).map(([value, label]) => <button type="button" key={value} aria-pressed={range === value} onClick={() => { setRange(value); setCursor(null); }}>{label}</button>)}</div></div></div>
     {!history ? <div className="ni-chart-empty">The session chart appears when futures candles arrive.</div> : <>
       <output className="ni-chart-readout" aria-live="off" aria-label="Values at selected chart time">
-        <b>{clock(at)} IST</b><span>{definition.shortLabel} <strong>{signed(niftyValue, 2)}%</strong></span><span>Basket <strong>{signed(basketValue, 2)}%</strong></span><span>Est. <strong>{signed(pointValue, 1)} pts</strong></span>
+        <b>{clock(at)} IST · {cursor != null ? 'Selected time' : history.hasCommonTime ? 'Latest shared minute' : 'Latest available candle'}{cursor != null && <button type="button" className="ni-latest-time" onClick={() => setCursor(null)}>Latest</button>}</b><span>{definition.shortLabel} futures <strong>{signed(niftyValue, 3)}%</strong></span><span>Weighted estimate <strong>{signed(basketValue, 3)}%</strong></span><span>Est. points <strong>{signed(pointValue, 1)} pts</strong></span>
       </output>
+      <div className="ni-comparison-gap" aria-label="Difference at selected time"><span>Future − estimate</span><b>{signed(gap, 3)} pp</b><small>{gap == null ? 'No matching candle to compare' : 'Percentage-point gap at the same minute'}</small></div>
       <svg className="ni-chart ni-chart-large" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={`Session percentage change: ${definition.label} futures compared with the weighted stock estimate`} onPointerMove={point} onPointerDown={point} onPointerLeave={() => setCursor(null)}>
         <defs>
           <clipPath id={clipId}><rect x={left} y={top} width={right - left} height={bottom - top} /></clipPath>

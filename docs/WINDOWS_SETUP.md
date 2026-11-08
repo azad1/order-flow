@@ -1,6 +1,6 @@
 # Windows setup — Nifty & Sensex Estimator
 
-This guide is for the public fork at [azad1/order-flow](https://github.com/azad1/order-flow). It uses Windows PowerShell and the bundled archive replay. You do not need a broker account, API key or Python.
+This guide is for the public fork at [azad1/order-flow](https://github.com/azad1/order-flow). It uses Windows PowerShell and the bundled recorded replay, recommended for comparing the estimate with index futures. You do not need a broker account, API key or Python.
 
 [Back to the README](../README.md) · [See the current screenshots](screenshots/README.md)
 
@@ -75,10 +75,10 @@ npm.cmd install
 
 This downloads the app's dependencies into its `node_modules` folder. It needs internet access and does not install packages globally. Wait until the normal PowerShell prompt returns. If it reports an error, resolve that error before continuing.
 
-## 4. Start the archive replay
+## 4. Start the recorded replay
 
 ```powershell
-npm.cmd run dev:archive
+npm.cmd run dev:recorded
 ```
 
 Keep this terminal open and visit **http://127.0.0.1:5195/**.
@@ -86,7 +86,8 @@ Keep this terminal open and visit **http://127.0.0.1:5195/**.
 Check that:
 
 - The page shows **Nifty 50** and **Sensex** tabs.
-- The status says **NSE archive [date] · replay**. The bundled date is **6 November 2026**.
+- The data card says **Recorded replay**, session **30 October 2026**.
+- The shared candle time, stock coverage and weight snapshot are shown. Sensex explicitly warns that its weights are older than the session.
 - The futures-loading counter finishes. A genuinely unavailable future can still be marked unavailable.
 - Prices, futures percentage moves, weights and estimated point impacts appear.
 - Clicking a stock in the left list opens its detail panel.
@@ -99,12 +100,20 @@ The replay date is the date of the stored session, not a claim that the app is r
 **Start again:** open PowerShell in the same project folder and run:
 
 ```powershell
-npm.cmd run dev:archive
+npm.cmd run dev:recorded
 ```
 
 **Stop:** return to that terminal and press **Ctrl+C**. If Windows asks to terminate the batch job, type **Y** and press Enter. Closing the browser tab alone does not stop the server.
 
 You do not need to run `npm.cmd install` on every start.
+
+To check the saved recording's coverage, matching candle times and contracts:
+
+```powershell
+npm.cmd run check:comparison
+```
+
+This check does not connect to a broker. A PASS checks consistency, not whether the estimate exactly tracks the index. Both returns use their own futures previous closes. The chart's **Future − estimate** reports their difference in percentage points at the same minute.
 
 ## 6. Try the controls
 
@@ -143,10 +152,10 @@ Stop the development server first. Build the page:
 npm.cmd run build
 ```
 
-Start the page and API together in archive mode:
+Start the page and API together in recorded mode:
 
 ```powershell
-npm.cmd run start:archive
+npm.cmd run start:recorded
 ```
 
 Open **http://127.0.0.1:8787/**. Stop with Ctrl+C. This is a local app; you do not need to publish it or open a firewall port.
@@ -175,9 +184,9 @@ For a future live provider, follow [the provider setup section](../README.md#con
 | `EADDRINUSE` / port 8787 is already in use | Stop the other Estimator server in its terminal, then retry. Do not stop unrelated processes. |
 | The terminal prints port 5196 or another page address | Port 5195 was occupied, so Vite selected another port. Use the exact Local address printed, or stop the earlier app instance and restart. |
 | The page shows loading, pending or unavailable futures | Wait for the first collection to finish and read the status line. Missing futures are not replaced with cash prices. Check terminal errors if loading never completes. |
-| It says Demo or shows an older date | Start with `npm.cmd run dev:archive` and read the replay date. Fetching an archive does not establish a live connection. |
+| It says Demo or shows an older date | Start with `npm.cmd run dev:recorded`. The historical date is intentional; replay is not a live connection. Archive mode reconstructs intraday paths and is unsuitable for checking intraday tracking. |
 | Archive download fails | Read the terminal message. Retry when the exchange files are available; the bundled session remains available. |
-| Changes do not appear in the built app | Stop it, rebuild with `npm.cmd run build`, then run `npm.cmd run start:archive` again. |
+| Changes do not appear in the built app | Stop it, rebuild with `npm.cmd run build`, then run `npm.cmd run start:recorded` again. |
 
 If Windows still cannot find Node, check the normal installation location:
 

@@ -77,13 +77,13 @@ export function valueAt(line: FlowLine | null, at: number): number | null {
 export function basketHistory(model: NiftyImpact, t0: number, t1: number): { line: FlowLine | null; count: number } {
   const available = model.rows.filter(row => row.impact !== null);
   const lines = available.flatMap(row => {
-    const line = row.stock ? lineOf(row.stock, t0, t1) : null;
+    const line = row.stock ? lineOf(row.stock, t0, t1, false) : null;
     return line ? [{ weight: row.weightPct / 100, values: new Map(line.t.map((t, i) => [t, line.v[i]])) }] : [];
   });
   // An incomplete history must not imply the same basket as the headline.
   if (!lines.length || lines.length !== available.length) return { line: null, count: lines.length };
   const shared = [...lines[0].values.keys()].filter(t => lines.every(line => line.values.has(t))).sort((a, b) => a - b);
-  if (shared.length < 2) return { line: null, count: lines.length };
+  if (!shared.length) return { line: null, count: lines.length };
   return { line: { symbol: 'WEIGHTED_BASKET', t: shared, v: shared.map(t => lines.reduce((sum, line) => sum + line.weight * line.values.get(t)!, 0)) }, count: lines.length };
 }
 

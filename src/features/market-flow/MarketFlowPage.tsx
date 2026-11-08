@@ -56,7 +56,7 @@ export function MarketFlowPage({ universe }: MarketFlowPageProps) {
     });
   }, [universe, definition]);
   const benchmark = useMemo(() => universe.find(item => item.symbol === definition.symbol && item.kind === 'index'), [universe, definition]);
-  const { flow, benchmarkStock, market, loading, error, provider, futuresRead, futuresTotal, rescan } = useMarketFlow(shown, SETTINGS, benchmark);
+  const { flow, benchmarkStock, alignment, market, loading, error, provider, futuresRead, futuresTotal, rescan } = useMarketFlow(shown, SETTINGS, benchmark);
 
   const pageActions = (
     <>
@@ -79,7 +79,7 @@ export function MarketFlowPage({ universe }: MarketFlowPageProps) {
         }}>{index.label}</button>)}
       </div><span>Estimating index movement from weighted stock futures.</span></div>
       <div role="tabpanel" id={`${indexId}-board`} aria-labelledby={`${indexId}-tab`}>
-      <NiftyWeightBoard key={indexId} definition={definition} flow={flow} benchmark={benchmarkStock}
+      <NiftyWeightBoard key={indexId} definition={definition} flow={flow} benchmark={benchmarkStock} provider={provider} alignment={alignment}
         status={<FlowStatus flow={flow} at={market?.at ?? null} loading={loading} error={error} provider={provider} futuresRead={futuresRead} futuresTotal={futuresTotal} onRescan={rescan} />} />
       </div>
     </div>

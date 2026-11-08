@@ -43,6 +43,7 @@
     "test": "vitest run",
     "lint": "eslint src",
     "check:provider": "node server/checkProvider.mjs",
+    "check:comparison": "node scripts/check-comparison.mjs",
     "record": "node scripts/record-session.mjs",
     "fetch:nse": "node scripts/fetch-nse-archive.mjs"
   },

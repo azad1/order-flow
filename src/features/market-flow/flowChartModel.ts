@@ -37,19 +37,20 @@ export function chartSpan(flow: Pick<MarketFlow, 'date' | 'window' | 'futures'>)
  * a line is never stretched to the right edge, so a stale future stops where
  * its prints stop. Null without a futures reading.
  */
-export function lineOf(stock: Pick<FlowStock, 'symbol' | 'fut' | 'candles'>, t0: number, t1: number): FlowLine | null {
+export function lineOf(stock: Pick<FlowStock, 'symbol' | 'fut' | 'candles'>, t0: number, t1: number, includeStart = true): FlowLine | null {
   const fut = stock.fut;
   if (!fut || !(fut.priceFrom > 0)) return null;
   const start = fut.from ?? t0;
-  const t: number[] = [Math.max(t0, start)];
-  const v: number[] = [0];
+  // Comparison charts omit the artificial zero at the open: overnight gaps are real.
+  const t: number[] = includeStart ? [Math.max(t0, start)] : [];
+  const v: number[] = includeStart ? [0] : [];
   for (const candle of stock.candles) {
     const end = candle.at + MINUTE;
-    if (end <= start || end > t1) continue;
+    if (end <= Math.max(t0, start) || end > t1) continue;
     t.push(end);
     v.push((candle.close / fut.priceFrom - 1) * 100);
   }
-  return t.length >= 2 ? { symbol: stock.symbol, t, v } : null;
+  return t.length >= (includeStart ? 2 : 1) ? { symbol: stock.symbol, t, v } : null;
 }
 
 /**

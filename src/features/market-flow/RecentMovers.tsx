@@ -10,7 +10,8 @@ const moveLabel = (value: number) => Math.abs(value) < .005 && value !== 0 ? `${
 
 export function RecentMovers({ model, flow, definition }: { model: NiftyImpact; flow: MarketFlow | null; definition: IndexDefinition }) {
   const focus = useFlowFocus();
-  const recent = useMemo(() => recentMovers(model, flow?.date, flow?.asOf), [model, flow?.date, flow?.asOf]);
+  const comparisonAt = flow?.futures.latestAt ?? flow?.asOf;
+  const recent = useMemo(() => recentMovers(model, flow?.date, comparisonAt), [model, flow?.date, comparisonAt]);
   const maximum = Math.max(.000001, ...[...recent.up, ...recent.down].map(row => Math.abs(row.movePct)));
   return <section className="ni-top-section ni-recent-section" aria-label={`Recent ${definition.shortLabel} movers`}>
     <div className="ni-top-heading"><div><span className="ni-section-kicker">THE LAST {RECENT_MINUTES} MINUTES</span><h3>Recent movers</h3></div><span className="ni-recent-window">{recent.start != null && recent.end != null ? `${sessionClock(recent.start)}–${sessionClock(recent.end)} IST` : 'Waiting for a full 15-minute window'}</span></div>
