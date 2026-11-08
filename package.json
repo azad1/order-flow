@@ -11,10 +11,10 @@
   "homepage": "https://github.com/MrChartist/order-flow#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MrChartist/order-flow.git"
+    "url": "git+https://github.com/azad1/order-flow.git"
   },
   "bugs": {
-    "url": "https://github.com/MrChartist/order-flow/issues"
+    "url": "https://github.com/azad1/order-flow/issues"
   },
   "keywords": [
     "nse",

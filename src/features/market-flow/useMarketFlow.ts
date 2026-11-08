@@ -18,7 +18,7 @@ export const COMMIT_MS = 750;
  * is the chart's reference line), then the biggest spot movers. Arrivals are
  * gathered and committed at most every COMMIT_MS.
  */
-export function useMarketFlow(universe: readonly Underlying[], settings: FlowSettings) {
+export function useMarketFlow(universe: readonly Underlying[], settings: FlowSettings, benchmark?: Underlying) {
   const data = useMarketFeed();
   const market = data.market;
   const sectorLabels = useMemo(() => {
@@ -38,8 +38,11 @@ export function useMarketFlow(universe: readonly Underlying[], settings: FlowSet
       const move = item.symbol === 'NIFTY' ? Infinity : series.spotPrevClose ? Math.abs(series.spot / series.spotPrevClose - 1) : 0;
       rows.push({ symbol: item.symbol, move });
     }
-    return rows.sort((a, b) => b.move - a.move || a.symbol.localeCompare(b.symbol)).map(row => row.symbol);
-  }, [market, universe, settings.scope]);
+    const ordered = rows.sort((a, b) => b.move - a.move || a.symbol.localeCompare(b.symbol)).map(row => row.symbol);
+    // Fetch the comparison index with the same feed, without making it a 51st constituent.
+    if (benchmark && nearSeries(market, benchmark.symbol) && !ordered.includes(benchmark.symbol)) ordered.unshift(benchmark.symbol);
+    return ordered;
+  }, [market, universe, settings.scope, benchmark]);
 
   const futures = useFuturesFeed(symbols, Boolean(market), data.status);
   const live = useMemo(() => ({ series: futures.series, failed: futures.failed }), [futures.series, futures.failed]);
@@ -51,15 +54,19 @@ export function useMarketFlow(universe: readonly Underlying[], settings: FlowSet
     () => (market ? buildMarketFlow(market, committed.series, universe, sectorLabels, { window: win, scope, floorPct, named: null, lines: 'all' }, { failed: committed.failed }) : null),
     [market, committed, universe, sectorLabels, win, scope, floorPct],
   );
+  const benchmarkStock = useMemo(() => market && benchmark
+    ? buildMarketFlow(market, committed.series, [benchmark], sectorLabels, { window: win, scope: 'indices', floorPct, named: null, lines: 'all' }, { failed: committed.failed }).stocks[0] ?? null
+    : null, [market, committed, benchmark, sectorLabels, win, floorPct]);
 
   return {
     flow,
+    benchmarkStock,
     market,
     loading: data.loading,
     error: data.error,
     provider: data.status?.provider ?? null,
-    futuresRead: futures.read,
-    futuresTotal: futures.total,
+    futuresRead: benchmark && flow ? flow.futures.total - flow.futures.pending : futures.read,
+    futuresTotal: benchmark && flow ? flow.futures.total : futures.total,
     session: futures.session,
     rescan: data.rescan,
   };

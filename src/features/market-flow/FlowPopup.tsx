@@ -9,11 +9,15 @@ import { useFlowFocus, type FocusState } from './flowFocus';
 import { buildUpText, ChangeText, DotMeter, signedText, Spark, toneOf, windowCandles } from './FlowParts';
 import { clockOf, compactUnits, levelText, type FlowLevel, type FlowStock, type MarketFlow } from './marketFlowModel';
 import { useBox } from './useBox';
+import type { IndexMember } from './indexDefinitions';
+import { futuresQuote } from './niftyImpactModel';
 
 interface FlowPopupProps {
   flow: MarketFlow;
   /** On a desktop the detail opens over the other half of the column, on hover; elsewhere it is a sheet, on a tap. */
   mode: 'half' | 'sheet';
+  /** A combined index-weight order, when the detail opens from the Nifty list. */
+  weightOrder?: readonly IndexMember[];
 }
 
 const SHOW_DELAY_MS = 70;
@@ -33,7 +37,7 @@ const HIDE_DELAY_MS = 90;
  * conviction check in words, ← → to step through the side's list, and the
  * close and step controls in the app's own icons.
  */
-export function FlowPopup({ flow, mode }: FlowPopupProps) {
+export function FlowPopup({ flow, mode, weightOrder }: FlowPopupProps) {
   const focus = useFlowFocus();
   const [shown, setShownState] = useState<FocusState | null>(null);
   const shownRef = useRef<FocusState | null>(null);
@@ -73,7 +77,12 @@ export function FlowPopup({ flow, mode }: FlowPopupProps) {
   if (!shown || !stock) return null;
   const full = shown.pinned && mode === 'half';
   const where = mode === 'sheet' ? 'is-sheet' : full ? 'is-full' : stock.side === 'bearish' ? 'is-top' : 'is-bottom';
-  const list = stock.side === 'bullish' ? flow.bullish : stock.side === 'bearish' ? flow.bearish : null;
+  const weight = weightOrder?.find(member => member.symbol === stock.symbol);
+  const price = weight ? futuresQuote(stock) : stock.fut?.price ?? stock.spot;
+  const future = stock.source === 'futures' ? stock.fut : null;
+  const list = weightOrder
+    ? weightOrder.flatMap(member => { const reading = flow.stocks.find(item => item.symbol === member.symbol); return reading ? [reading] : []; })
+    : stock.side === 'bullish' ? flow.bullish : stock.side === 'bearish' ? flow.bearish : null;
   const at = list ? list.findIndex(item => item.symbol === stock.symbol) : -1;
   const prev = list && at > 0 ? list[at - 1] : null;
   const next = list && at >= 0 && at < list.length - 1 ? list[at + 1] : null;
@@ -88,9 +97,10 @@ export function FlowPopup({ flow, mode }: FlowPopupProps) {
         </span>
         <span className="mf-popup__spark"><Spark stock={stock} width={64} height={22} /></span>
         <span className="mf-popup__price">
-          <b>₹{fmtPrice(stock.fut?.price ?? stock.spot)}</b>
-          <ChangeText value={stock.changePct} />
-          {stock.fut && <span className={`mf-num ${toneOf(stock)}`}>{signedText(stock.fut.priceChange)}</span>}
+          {weight && <small className="nw-detail-price-kind">Futures</small>}
+          <b>{price == null ? '—' : `₹${fmtPrice(price)}`}</b>
+          <ChangeText value={weight ? future?.priceChangePct : stock.changePct} />
+          {(weight ? future : stock.fut) && <span className={`mf-num ${toneOf(stock)}`}>{signedText(stock.fut!.priceChange)}</span>}
         </span>
         {shown.pinned && (
           <span className="mf-popup__tools">
@@ -107,7 +117,11 @@ export function FlowPopup({ flow, mode }: FlowPopupProps) {
       </header>
       <MiniChart stock={stock} window={flow.window} />
       <dl className="mf-popup__facts">
-        <div><dt>Rank</dt><dd>{stock.rank != null && list ? <>#{stock.rank} <small>of {list.length} {stock.side === 'bullish' ? 'up' : 'down'}</small></> : <small>Flat, inside ±{flow.floorPct}%</small>}</dd></div>
+        {weight ? <>
+          <div><dt>Futures expiry</dt><dd>{future ? expiryDisplay(future.contractDate).label : '—'}</dd></div>
+          <div><dt>Weight rank</dt><dd>#{weight.rank} <small>of {weightOrder!.length}</small></dd></div>
+          <div><dt>Index weight</dt><dd>{weight.weightPct.toFixed(2)}%</dd></div>
+        </> : <div><dt>Rank</dt><dd>{stock.rank != null && list ? <>#{stock.rank} <small>of {list.length} {stock.side === 'bullish' ? 'up' : 'down'}</small></> : <small>Flat, inside ±{flow.floorPct}%</small>}</dd></div>}
         <div><dt>Build-up</dt><dd className={`mf-tone is-${stock.side ?? 'flat'}`}>{buildUpText(stock)}</dd></div>
         <div><dt>Conviction</dt><dd>{stock.checks.length ? <DotMeter checks={stock.checks} count /> : <small>—</small>}</dd></div>
         <div><dt>Open Interest</dt><dd><ChangeText value={stock.oiChangePct} digits={1} neutral />{stock.fut && <small> {compactUnits(stock.fut.oi)}</small>}</dd></div>

@@ -4,16 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Underlying } from '@/lib/underlyings';
 import type { MarketFlow } from './marketFlowModel';
 
-const media = vi.hoisted(() => ({ wide: false, phone: false }));
-vi.mock('@/hooks/useMediaQuery', () => ({
-  useMediaQuery: (query: string) => (query.includes('min-width: 1100px') ? media.wide : query.includes('max-width: 768px') ? media.phone : false),
-}));
-const hook = vi.hoisted(() => ({ flow: null as MarketFlow | null, universe: [] as string[] }));
+const hook = vi.hoisted(() => ({ flow: null as MarketFlow | null, universe: [] as string[], benchmark: undefined as string | undefined }));
 vi.mock('./useMarketFlow', () => ({
-  useMarketFlow: (universe: Array<{ symbol: string }>) => (hook.universe = universe.map(item => item.symbol), { flow: hook.flow, market: hook.flow ? { at: Date.parse('2026-10-09T10:15:00+05:30') } : null, loading: !hook.flow, error: null, provider: null, futuresRead: 0, futuresTotal: 0, session: null, rescan: () => undefined }),
+  useMarketFlow: (universe: Array<{ symbol: string }>, _settings: unknown, benchmark?: { symbol: string }) => (hook.universe = universe.map(item => item.symbol), hook.benchmark = benchmark?.symbol, { flow: hook.flow, market: hook.flow ? { at: Date.parse('2026-10-09T10:15:00+05:30') } : null, loading: !hook.flow, error: null, provider: null, futuresRead: 0, futuresTotal: 0, session: null, rescan: () => undefined }),
 }));
 
 import { MarketFlowPage } from './MarketFlowPage';
+import { NIFTY_INDEX } from './indexDefinitions';
 
 const empty: MarketFlow = {
   asOf: 0, date: '2026-10-09', window: 'day', floorPct: 0.5, stocks: [], sectors: [], bullish: [], bearish: [], rangebound: [], unread: [],
@@ -25,47 +22,77 @@ const reliance = { symbol: 'RELIANCE', name: 'Reliance', apiKey: 'NSE:RELIANCE',
 const suzlon = { symbol: 'SUZLON', name: 'Suzlon', apiKey: 'NSE:SUZLON', lot: 8000, kind: 'stock', exch: 'NSE' } as Underlying;
 const page = (universe: Underlying[] = []) => render(<MemoryRouter><MarketFlowPage universe={universe} /></MemoryRouter>);
 
-beforeEach(() => { localStorage.clear(); media.wide = false; media.phone = false; hook.flow = empty; });
+beforeEach(() => { localStorage.clear(); hook.flow = empty; });
 afterEach(cleanup);
 
 describe('MarketFlowPage', () => {
-  it('lays out by the media queries: one surface on a desktop, stacked on a tablet, panels on a phone', () => {
-    media.wide = true;
-    const view = page();
-    expect(view.container.querySelector('.ui-flow')).toHaveAttribute('data-layout', 'desktop');
-    expect(view.container.querySelector('.mf-board[data-layout="desktop"]')).not.toBeNull();
-    expect(screen.getByRole('region', { name: /^Bullish/ })).toBeInTheDocument();
-    cleanup();
-    media.wide = false;
-    const tablet = page();
-    expect(tablet.container.querySelector('.ui-flow')).toHaveAttribute('data-layout', 'tablet');
-    expect(screen.getByRole('region', { name: /^Bearish/ })).toBeInTheDocument();
-    cleanup();
-    media.phone = true;
-    const phone = page();
-    expect(phone.container.querySelector('.ui-flow')).toHaveAttribute('data-layout', 'phone');
-    expect(screen.queryByRole('region', { name: /^Bullish/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: /^Bullish/ }));
-    expect(screen.getByRole('region', { name: /^Bullish/ })).toBeInTheDocument();
-  });
-
-  it('offers only the universe switch, Nifty 50 or All F&O, and remembers it', () => {
+  it('keeps a single stock-only Nifty view even when All F&O was saved previously', () => {
+    localStorage.setItem('orderFlow:universe:v1', 'fno');
     page([nifty, reliance, suzlon]);
-    expect(screen.queryByRole('button', { name: 'Customise Order Flow' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /^1h$/ })).not.toBeInTheDocument();
-    expect(hook.universe).toEqual(['NIFTY', 'RELIANCE', 'SUZLON']);
-    fireEvent.click(screen.getByRole('radio', { name: 'Nifty 50' }));
-    // NIFTY stays: it is the chart's reference line.
-    expect(hook.universe).toEqual(['NIFTY', 'RELIANCE']);
-    expect(localStorage.getItem('orderFlow:universe:v1')).toBe('nifty50');
+    expect(hook.universe).toEqual(['RELIANCE']);
+    expect(screen.queryByRole('radio', { name: 'All F&O' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Nifty 50 by impact' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Weight' }));
+    expect(screen.getByRole('heading', { name: 'Nifty 50 by weightage' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Weight/ })).toHaveAttribute('aria-sort', 'descending');
   });
 
-  it('draws the empty board as a skeleton with the progress in words while nothing is read', () => {
+  it('requests the current members in weight order, including BSE and excluding WIPRO and the index', () => {
+    const member = (symbol: string) => ({ ...reliance, symbol });
+    page([member('WIPRO'), member('BSE'), reliance, nifty, member('HDFCBANK'), member('ICICIBANK')]);
+    expect(hook.universe).toEqual(['HDFCBANK', 'ICICIBANK', 'RELIANCE', 'BSE']);
+    expect(hook.benchmark).toBe('NIFTY');
+    expect(screen.getByRole('heading', { name: 'Nifty 50 futures' })).toBeInTheDocument();
+  });
+
+  it('keeps all 50 rows and the dated weights visible while market data is loading', () => {
     hook.flow = null;
-    media.wide = true;
     const { container } = page();
     expect(screen.getByRole('status')).toHaveTextContent('Loading the market…');
-    expect(container.querySelectorAll('.mf-half.is-skeleton')).toHaveLength(2);
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(50);
+    expect(container.querySelector('tbody tr')).toHaveAttribute('data-sym', 'HDFCBANK');
+    expect(screen.getByText('30 October 2026')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^HDFCBANK, index weight 9.95%/ })).toBeDisabled();
+  });
+
+  it('switches the whole board to the 30 Sensex members and its own comparison future', () => {
+    const sensex = { ...nifty, symbol: 'SENSEX', exch: 'BSE' } as Underlying;
+    const { container } = page([nifty, sensex, ...NIFTY_INDEX.members.map(member => ({ ...reliance, symbol: member.symbol }))]);
+    expect(hook.universe).toHaveLength(50);
+    fireEvent.click(screen.getByRole('tab', { name: 'Sensex' }));
+    expect(hook.universe).toHaveLength(30);
+    expect(hook.universe).not.toContain('BSE');
+    expect(hook.universe).not.toContain('NIFTY');
+    expect(hook.benchmark).toBe('SENSEX');
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(30);
+    expect(screen.getByRole('tabpanel', { name: 'Sensex' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sensex futures' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What is moving Sensex?' })).toBeInTheDocument();
+    expect(screen.getByText('7 September 2026')).toBeInTheDocument();
+    expect(screen.getByText(/not current official weights/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Weights: Solomo / BSE snapshot' })).toHaveAttribute('href', 'https://solomo.ai/markets/sensex/');
+    expect(screen.getByRole('button', { name: /^HDFCBANK, index weight 11.85%/ })).toBeInTheDocument();
+    expect(localStorage.getItem('orderFlow:index')).toBe('sensex');
+    fireEvent.click(screen.getByRole('tab', { name: 'Nifty 50' }));
+    expect(hook.universe).toHaveLength(50);
+    expect(hook.benchmark).toBe('NIFTY');
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(50);
+  });
+
+  it('restores the chosen index, keeps sorting separate and supports keyboard tab changes', () => {
+    localStorage.setItem('orderFlow:index', 'sensex');
+    localStorage.setItem('orderFlow:niftySort', 'weight');
+    page();
+    expect(screen.getByRole('tab', { name: 'Sensex' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: 'Sensex by impact' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Sensex' }), { key: 'ArrowLeft' });
+    expect(screen.getByRole('tab', { name: 'Nifty 50' })).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Nifty 50 by weightage' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Nifty 50' }), { key: 'End' });
+    expect(screen.getByRole('heading', { name: 'Sensex by impact' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Weight' }));
+    expect(localStorage.getItem('orderFlow:sensexSort')).toBe('weight');
+    expect(localStorage.getItem('orderFlow:niftySort')).toBe('weight');
   });
 
 });

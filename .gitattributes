@@ -1,0 +1,2 @@
+# Keep script hashbangs importable by the test runner on Windows.
+*.mjs text eol=lf

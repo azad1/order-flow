@@ -1,3 +1,15 @@
+> **Nifty / Sensex custom edition.** This repository is a personal, non-commercial
+> adaptation of [MrChartist/order-flow](https://github.com/MrChartist/order-flow),
+> originally created by [Mr. Chartist](https://mrchartist.com). The original
+> [licence](LICENSE), copyright notice and [third-party notices](NOTICE.md) are retained.
+>
+> This edition adds Nifty 50 / Sensex tabs, weight and impact rankings, futures
+> prices, animated connections, interactive comparison charts and recent movers.
+> **Start with archive replay; a live broker feed is not connected.** Read
+> [the custom-edition guide](CUSTOMIZATIONS.md) for Windows setup, data limitations
+> and the differences from the original board. The screenshots below show the
+> original project's layout.
+
 <div align="center">
 
 <picture>
@@ -12,7 +24,7 @@
 Every NSE and BSE F&O underlying, read from its future, on one board.<br>
 Bulls rise above the zero line, bears fall below it, and every name runs on its own path to a card.
 
-[![CI](https://github.com/MrChartist/order-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/MrChartist/order-flow/actions/workflows/ci.yml)
+[![CI](https://github.com/azad1/order-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/azad1/order-flow/actions/workflows/ci.yml)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-16d98a.svg)](LICENSE)
 ![Node 22.18+](https://img.shields.io/badge/node-%E2%89%A522.18-informational.svg)
 ![No keys needed](https://img.shields.io/badge/keys-none%20needed-000000.svg)
@@ -49,7 +61,7 @@ An option chain shows you one stock. A heatmap shows you a colour. **Order Flow 
 ## Quick start
 
 ```bash
-git clone https://github.com/MrChartist/order-flow.git
+git clone https://github.com/azad1/order-flow.git
 cd order-flow
 npm install
 npm run dev:archive      # a real NSE + BSE session (6 Nov 2026), replayed live

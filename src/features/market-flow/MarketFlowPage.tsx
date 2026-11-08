@@ -1,52 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageBar } from '@/components/chrome/PageBar';
 import { ThemeToggle } from '@/components/chrome/ThemeToggle';
 import { applyTheme } from '@/lib/applyTheme';
-import { CapsuleSegmented } from '@/components/common/CapsuleSegmented';
-import { useFitScrollerHeight } from '@/hooks/useFitScrollerHeight';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Underlying } from '@/lib/underlyings';
-import { FlowBoard, type FlowLayout } from './FlowBoard';
+import { NiftyWeightBoard } from './NiftyWeightBoard';
 import { FlowStatus } from './FlowStatus';
 import { DEFAULT_FLOW_SETTINGS, type FlowSettings } from './marketFlowModel';
-import { inUniverse, loadUniverse, saveUniverse, type FlowUniverse } from './nifty50';
+import { INDEX_DEFINITIONS, NIFTY_INDEX, type IndexDefinition } from './indexDefinitions';
 import { useMarketFlow } from './useMarketFlow';
 
 /*
  * The workspace stylesheet chain, in the order the other pages import it:
  * the shared tokens (`oi-design` publishes --dash-* and the numeric ramp),
- * this page's own sheet, then the page finish last so it never needs
- * !important.
+ * the shared page finish, then the weight-list layout overrides.
  */
 import '@/styles/oi-design-tokens.css';
 import './market-flow.css';
 import '../underlying/pages-finish.css';
+import './nifty-weight-board.css';
 
 /**
- * Order Flow. Every F&O underlying, read from its future: the day's flow as
- * one chart on the left (bulls rising above the zero rule, bears falling
- * below it), the Bullish half over the Bearish half on the right, each a grid
- * of small tiles ranked by the move and one or two large cards. Hovering a
- * tile lights its line and opens its detail; hovering a line lights its tile.
- *
- * The page keeps nothing of its own. The market file and the futures are the
- * Options Scanner's reads (useMarketFlow), the build-up words are the
- * scanner's, the levels are the chain's open interest. The one choice, the
- * NIFTY 50 or every F&O underlying, is remembered in this browser.
+ * Each index owns its membership, weight snapshot and comparison future.
+ * The same board is remounted on a tab change to clear pinned details and chart cursors.
  */
 
-/** The board always reads the whole day, every line drawn, at the day's own floor. */
-const SETTINGS: FlowSettings = DEFAULT_FLOW_SETTINGS;
-const CHART = { named: SETTINGS.named, lines: SETTINGS.lines };
+/** Read each stock's day session using the existing futures calculations. */
+const SETTINGS: FlowSettings = { ...DEFAULT_FLOW_SETTINGS, scope: 'stocks' };
 
 interface MarketFlowPageProps {
   universe: Underlying[];
 }
-
-const UNIVERSES: Array<{ value: FlowUniverse; label: string; title: string }> = [
-  { value: 'nifty50', label: 'Nifty 50', title: 'The NIFTY 50 constituents' },
-  { value: 'fno', label: 'All F&O', title: 'Every F&O underlying: stocks and indices' },
-];
 
 /** The wordmark: Order Flow in the website's heading face, the Mr. Chartist dot, and who made it. */
 const BRAND = (
@@ -58,33 +41,48 @@ const BRAND = (
 );
 
 export function MarketFlowPage({ universe }: MarketFlowPageProps) {
-  const [scope, setScope] = useState<FlowUniverse>(loadUniverse);
-  const pageRef = useRef<HTMLDivElement>(null);
-  const wider = useMediaQuery('(min-width: 1280px)');
-  const wide = useMediaQuery('(min-width: 1100px)');
-  const phone = useMediaQuery('(max-width: 768px)');
-  const layout: FlowLayout = wider ? 'diagram' : wide ? 'desktop' : phone ? 'phone' : 'tablet';
-  // A desktop board is the window's height; the other layouts scroll the page.
-  const fits = layout === 'desktop' || layout === 'diagram';
-  useFitScrollerHeight(pageRef, fits);
-  useEffect(() => { saveUniverse(scope); }, [scope]);
-
-  const shown = useMemo(() => universe.filter(item => inUniverse(item.symbol, scope)), [universe, scope]);
-  const { flow, market, loading, error, provider, futuresRead, futuresTotal, rescan } = useMarketFlow(shown, SETTINGS);
+  const [indexId, setIndexId] = useState<IndexDefinition['id']>(() => {
+    try { return localStorage.getItem('orderFlow:index') === 'sensex' ? 'sensex' : 'nifty50'; } catch { return 'nifty50'; }
+  });
+  const definition = INDEX_DEFINITIONS.find(index => index.id === indexId) ?? NIFTY_INDEX;
+  const changeIndex = (id: IndexDefinition['id']) => {
+    setIndexId(id);
+    try { localStorage.setItem('orderFlow:index', id); } catch { /* Storage is optional. */ }
+  };
+  const shown = useMemo(() => {
+    const bySymbol = new Map(universe.filter(item => item.kind === 'stock').map(item => [item.symbol, item]));
+    return definition.members.flatMap(({ symbol }) => {
+      const stock = bySymbol.get(symbol);
+      return stock ? [stock] : [];
+    });
+  }, [universe, definition]);
+  const benchmark = useMemo(() => universe.find(item => item.symbol === definition.symbol && item.kind === 'index'), [universe, definition]);
+  const { flow, benchmarkStock, market, loading, error, provider, futuresRead, futuresTotal, rescan } = useMarketFlow(shown, SETTINGS, benchmark);
 
   const pageActions = (
     <>
-      <CapsuleSegmented options={UNIVERSES} value={scope} onChange={setScope} ariaLabel="Underlyings" groupId="flow-universe" size="page" className="ui-flow-universe" />
+      <span className="nw-scope">{definition.members.length} stocks · futures</span>
       <ThemeToggle onChange={theme => applyTheme(theme)} size="md" className="ui-flow-theme" />
     </>
   );
 
   return (
-    <div className="ui-flow oi-design" data-window="day" data-universe={scope} data-layout={layout} data-fit={fits ? 'true' : undefined} ref={pageRef}>
+    <div className="ui-flow oi-design" data-window="day" data-universe={indexId} data-layout="weights">
       <h1 className="is-visually-hidden">Order Flow</h1>
       <PageBar current="Order Flow" crumbs={false} className="oi-design ui-flow-pagebar" brand={BRAND}>{pageActions}</PageBar>
-      <FlowBoard key={scope} flow={flow} settings={CHART} layout={layout}
+      <div className="nw-index-nav"><div role="tablist" aria-label="Choose index" className="nw-index-tabs">
+        {INDEX_DEFINITIONS.map((index, position) => <button type="button" role="tab" id={`${index.id}-tab`} key={index.id} aria-selected={indexId === index.id} aria-controls={`${index.id}-board`} tabIndex={indexId === index.id ? 0 : -1} onClick={() => changeIndex(index.id)} onKeyDown={event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? INDEX_DEFINITIONS[0] : event.key === 'End' ? INDEX_DEFINITIONS.at(-1)! : INDEX_DEFINITIONS[(position + 1) % INDEX_DEFINITIONS.length];
+          changeIndex(next.id);
+          document.getElementById(`${next.id}-tab`)?.focus();
+        }}>{index.label}</button>)}
+      </div><span>Choose an index to follow</span></div>
+      <div role="tabpanel" id={`${indexId}-board`} aria-labelledby={`${indexId}-tab`}>
+      <NiftyWeightBoard key={indexId} definition={definition} flow={flow} benchmark={benchmarkStock}
         status={<FlowStatus flow={flow} at={market?.at ?? null} loading={loading} error={error} provider={provider} futuresRead={futuresRead} futuresTotal={futuresTotal} onRescan={rescan} />} />
+      </div>
     </div>
   );
 }
